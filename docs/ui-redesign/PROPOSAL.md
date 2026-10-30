@@ -72,7 +72,7 @@ We build a new app in **Avalonia on .NET 10**, written directly against `Azure.M
    - The environment band, and dark/light themes.
    - **Read-only on purpose:** this slice can't change or delete anything, so it's safe to point at Prod from day one.
    - **Status:** built. Run it with `dotnet run --project src/ServiceBusExplorer.Desktop`. Not in this slice: saved connections (you paste a connection string or sign in each time), browsing session-enabled entities (their dead-letter queues work), and entity-scoped connection strings.
-3. **Phase 3: getting to parity (team backlog), roughly in this order.**
+3. **Phase 3: getting to parity (team backlog), roughly in this order.** Broken into pull-request-sized items in [BACKLOG.md](./BACKLOG.md).
    - Send message, resubmit and edit-and-resubmit, purge and delete with environment-aware confirmation.
    - Create and edit entities, with human-readable durations.
    - Subscription rules, sessions, export/import.
