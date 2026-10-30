@@ -393,7 +393,9 @@ namespace ServiceBusExplorer.Controls
 
         private async Task DoPurge(PurgeStrategies purgeStrategy, string deleteConfirmation)
         {
-            if (!DeleteForm.ShowAndWaitUserConfirmation(this, deleteConfirmation))
+            var subscriptionDescription = subscriptionWrapper.SubscriptionDescription;
+            if (!DeleteForm.ShowAndWaitUserConfirmation(this, deleteConfirmation,
+                    $"{subscriptionDescription.TopicPath}/{subscriptionDescription.Name}"))
             {
                 return;
             }

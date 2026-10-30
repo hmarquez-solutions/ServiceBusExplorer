@@ -89,6 +89,8 @@ namespace ServiceBusExplorer.Forms
 
         private const string UriTooltip = "Gets or sets the URI of the service bus namespace endpoint.";
         private const string AuthenticationModeTooltip = "Select how Service Bus Explorer authenticates to the namespace.";
+        private const string EnvironmentTooltip = "The environment this connection points at. Prod and Untagged connections " +
+            "need the entity name typed to confirm purges and deletes.";
 
         //***************************
         // Messages
@@ -104,6 +106,7 @@ namespace ServiceBusExplorer.Forms
         private readonly ConfigFileUse configFileUse;
         private bool ignoreSelectedIndexChange;
         private bool ignoreAuthModeChange;
+        private bool ignoreEnvironmentChange;
 
         #endregion
 
@@ -145,6 +148,10 @@ namespace ServiceBusExplorer.Forms
             cboAuthMode.Items.AddRange(new object[] { SharedAccessSignatureAuthMode, EntraAuthMode });
             cboAuthMode.SelectedIndex = 0;
             toolTip.SetToolTip(cboAuthMode, AuthenticationModeTooltip);
+
+            cboEnvironment.Items.AddRange(Enum.GetValues(typeof(ConnectionEnvironment)).Cast<object>().ToArray());
+            SetSelectedEnvironment(ConnectionEnvironment.Untagged);
+            toolTip.SetToolTip(cboEnvironment, EnvironmentTooltip);
 
             cboTransportType.DataSource = Enum.GetValues(typeof(TransportType));
             var settings = new MessagingFactorySettings();
@@ -225,6 +232,12 @@ namespace ServiceBusExplorer.Forms
         public ConnectivityMode ConnectivityMode { get; private set; }
         public bool UseAmqpWebSockets { get; private set; }
         public TransportType TransportType { get; set; }
+
+        /// <summary>
+        /// The stored tag of the selected saved connection, or the tag picked for an unsaved one.
+        /// </summary>
+        public ConnectionEnvironment SelectedConnectionEnvironment =>
+            cboEnvironment.SelectedItem is ConnectionEnvironment environment ? environment : ConnectionEnvironment.Untagged;
 
         /// <summary>
         /// When non-null, the caller should use this pre-built namespace instance
@@ -640,6 +653,11 @@ namespace ServiceBusExplorer.Forms
             btnDelete.Visible = false;
             btnSave.Visible = cboServiceBusNamespace.Text == EnterConnectionString;
 
+            SetSelectedEnvironment(selectedNamespace != null
+                ? ConnectionEnvironmentHelper.GetEnvironment(OpenConfiguration(), Key)
+                : ConnectionEnvironment.Untagged);
+            cboEnvironment.Enabled = cboServiceBusNamespace.SelectedIndex != 0;
+
 
             // SAS selected
             if (cboServiceBusNamespace.SelectedIndex == 0)
@@ -703,6 +721,25 @@ namespace ServiceBusExplorer.Forms
 
             cboTransportType.SelectedItem = selectedNamespace.TransportType;
             validation_TextChanged(sender, e);
+        }
+
+        private void cboEnvironment_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // An unsaved connection keeps its tag for this session; Save stores it with the connection.
+            if (ignoreEnvironmentChange || Key == null)
+            {
+                return;
+            }
+
+            try
+            {
+                ConnectionEnvironmentHelper.SetEnvironment(OpenConfiguration(), Key, SelectedConnectionEnvironment);
+                MainForm.StaticWriteToLog($"Tagged '{Key}' as {SelectedConnectionEnvironment}.");
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+            }
         }
 
         private void cboAuthMode_SelectedIndexChanged(object sender, EventArgs e)
@@ -1020,6 +1057,14 @@ namespace ServiceBusExplorer.Forms
                     MainForm.StaticWriteToLog(ex.Message);
                 }
 
+                // Always write the tag so a new connection never inherits one left behind under the same key.
+                var environment = SelectedConnectionEnvironment;
+                if (isNewServiceBusNamespace && environment == ConnectionEnvironment.Untagged)
+                {
+                    environment = ConnectionEnvironmentHelper.SuggestEnvironment(index > 0 ? host.Substring(0, index) : host);
+                }
+                ConnectionEnvironmentHelper.SetEnvironment(OpenConfiguration(), key, environment);
+
                 serviceBusHelper.ServiceBusNamespaces[key] = ServiceBusNamespace.GetServiceBusNamespace(key, value, MainForm.StaticWriteToLog);
 
                 cboServiceBusNamespace.Items.Clear();
@@ -1034,6 +1079,18 @@ namespace ServiceBusExplorer.Forms
             {
                 HandleException(ex);
             }
+        }
+
+        TwoFilesConfiguration OpenConfiguration()
+        {
+            return TwoFilesConfiguration.Create(configFileUse, MainForm.StaticWriteToLog);
+        }
+
+        void SetSelectedEnvironment(ConnectionEnvironment environment)
+        {
+            ignoreEnvironmentChange = true;
+            cboEnvironment.SelectedItem = environment;
+            ignoreEnvironmentChange = false;
         }
 
         void HandleException(Exception ex)
@@ -1087,12 +1144,18 @@ namespace ServiceBusExplorer.Forms
                 var itemIndex = cboServiceBusNamespace.SelectedIndex;
                 ConfigurationHelper.UpdateServiceBusNamespace(configFileUse, key, newKey, newValue: null, MainForm.StaticWriteToLog);
 
+                var configuration = OpenConfiguration();
+                ConnectionEnvironmentHelper.SetEnvironment(configuration, newKey,
+                    ConnectionEnvironmentHelper.GetEnvironment(configuration, key));
+                ConnectionEnvironmentHelper.SetEnvironment(configuration, key, ConnectionEnvironment.Untagged);
+
                 ignoreSelectedIndexChange = true;
                 serviceBusHelper.ServiceBusNamespaces.Remove(key);
                 serviceBusHelper.ServiceBusNamespaces[newKey] = ns;
                 cboServiceBusNamespace.Items[itemIndex] = newKey.GetHashCode();
                 cboServiceBusNamespace.Items[itemIndex] = newKey;
                 cboServiceBusNamespace.Text = newKey;
+                Key = newKey;
                 ignoreSelectedIndexChange = false;
 
                 MainForm.StaticWriteToLog($"Renamed '{key}' to '{newKey}'");
@@ -1107,6 +1170,7 @@ namespace ServiceBusExplorer.Forms
                 if (deleteForm.ShowDialog() == DialogResult.OK)
                 {
                     ConfigurationHelper.RemoveServiceBusNamespace(configFileUse, key, MainForm.StaticWriteToLog);
+                    ConnectionEnvironmentHelper.SetEnvironment(OpenConfiguration(), key, ConnectionEnvironment.Untagged);
                     cboServiceBusNamespace.Items.RemoveAt(cboServiceBusNamespace.SelectedIndex);
                     cboServiceBusNamespace.SelectedIndex = 0;
 

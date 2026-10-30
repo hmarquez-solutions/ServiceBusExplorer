@@ -59,7 +59,7 @@ We build a new app in **Avalonia on .NET 10**, written directly against `Azure.M
 ### Phases
 
 1. **Phase 1: safety in today's app (WinForms).** The prod risk exists now, and the new app takes time.
-   - Each saved connection gets an **environment tag**: Dev, Test, Staging or Prod, set by hand when saving. The Connect dialog pre-selects Prod when the namespace name contains `prod`, `prd` or `production`. That's only a suggestion; nothing is inferred silently.
+   - Each connection gets an **environment tag**: Dev, Test, Staging or Prod, picked from a dropdown in the Connect dialog. Changing it on a saved connection saves it straight away. When you save a new connection without picking a tag, it's tagged Prod if the namespace name contains `prod`, `prd` or `production`, and otherwise it stays Untagged.
    - **No tag means Prod rules.** An untagged connection, including an ad-hoc one that was never saved, gets the strict confirmations until someone tags it.
    - The tag shows in the title bar plus a colored band across the top of the window. Untagged connections show as "Untagged".
    - Under **Prod rules**, purging needs the entity name typed to confirm. Today it only asks yes/no.
