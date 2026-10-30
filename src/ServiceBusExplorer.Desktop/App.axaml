@@ -1,0 +1,80 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ServiceBusExplorer.Desktop.App"
+             RequestedThemeVariant="Dark">
+
+  <!-- Palette from docs/ui-redesign/mockup.html. Fonts are the ones Windows 11 ships, with fallbacks. -->
+  <Application.Resources>
+    <ResourceDictionary>
+      <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI, Inter, sans-serif</FontFamily>
+      <FontFamily x:Key="MonoFont">Cascadia Mono, Cascadia Code, Consolas, Menlo, monospace</FontFamily>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#0D0F13" />
+          <SolidColorBrush x:Key="ChromeBrush" Color="#12151A" />
+          <SolidColorBrush x:Key="PanelBrush" Color="#161A20" />
+          <SolidColorBrush x:Key="RaisedBrush" Color="#1C2129" />
+          <SolidColorBrush x:Key="LineBrush" Color="#262D38" />
+          <SolidColorBrush x:Key="MutedBrush" Color="#8B97A8" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#60CDFF" />
+          <SolidColorBrush x:Key="AccentSoftBrush" Color="#1F60CDFF" />
+          <SolidColorBrush x:Key="OkBrush" Color="#3DDC97" />
+          <SolidColorBrush x:Key="WarnBrush" Color="#F5B544" />
+          <SolidColorBrush x:Key="BadBrush" Color="#FF6B5B" />
+          <SolidColorBrush x:Key="BadSoftBrush" Color="#22FF6B5B" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#EEF1F5" />
+          <SolidColorBrush x:Key="ChromeBrush" Color="#F7F9FB" />
+          <SolidColorBrush x:Key="PanelBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="RaisedBrush" Color="#F4F6F9" />
+          <SolidColorBrush x:Key="LineBrush" Color="#DFE4EA" />
+          <SolidColorBrush x:Key="MutedBrush" Color="#5A6677" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#005FB8" />
+          <SolidColorBrush x:Key="AccentSoftBrush" Color="#17005FB8" />
+          <SolidColorBrush x:Key="OkBrush" Color="#0F7B4F" />
+          <SolidColorBrush x:Key="WarnBrush" Color="#9A6400" />
+          <SolidColorBrush x:Key="BadBrush" Color="#C42B1C" />
+          <SolidColorBrush x:Key="BadSoftBrush" Color="#14C42B1C" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+
+    <Style Selector=":is(TextBlock).muted">
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+    </Style>
+    <!-- :is() also matches SelectableTextBlock, which derives from TextBlock. -->
+    <Style Selector=":is(TextBlock).mono">
+      <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBox.mono">
+      <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.columnHeader">
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- Message source tabs: flat buttons with an accent underline when selected. -->
+    <Style Selector="Button.tab">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0,0,0,2" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+    </Style>
+    <Style Selector="Button.tab.selected">
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </Application.Styles>
+</Application>
