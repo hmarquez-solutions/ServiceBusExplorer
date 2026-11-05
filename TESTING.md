@@ -52,8 +52,16 @@
 | 45 | Delete topic → dashboard sync | Delete topic "MyTopic" (with sub1, sub2) | Rows "MyTopic / sub1" and "MyTopic / sub2" disappear | ⬜ |
 | 46 | Delete subscription → dashboard sync | Delete subscription "sub1" from "MyTopic" | Row "MyTopic / sub1" disappears; "MyTopic / sub2" remains | ⬜ |
 | 47 | Create subscription → dashboard sync | Create subscription "NewSub" under "ExistingTopic" | Row "ExistingTopic / NewSub" appears | ⬜ |
+| 48 | Environment tag persists | Connect dialog → select a saved connection → set Environment to Dev → reopen dialog | Dev is still selected; log shows "Tagged '<key>' as Dev." | ⬜ |
+| 49 | Title and band | Connect with a Prod-tagged connection | Title starts with "[PROD]"; red band above the main panels | ⬜ |
+| 50 | Untagged gets Prod rules | Connect with an untagged or ad-hoc connection → Purge a queue | Purge asks you to type the queue name | ⬜ |
+| 51 | Prod purge | Prod connection → Purge a subscription | Must type "<topic>/<subscription>"; a wrong value blocks the purge | ⬜ |
+| 52 | Prod delete can't be disabled | Prod connection, with "disable further checks" turned on earlier → Delete a queue | Type-to-confirm still shown; no "disable" checkbox | ⬜ |
+| 53 | Dev keeps today's behavior | Dev connection → Purge a queue | Plain yes/no confirmation, as before | ⬜ |
+| 54 | New prod-named connection | Save a new connection to "contoso-prod" without picking a tag | It's saved as Prod | ⬜ |
+| 55 | Rename keeps the tag | Rename a Dev-tagged saved connection | The renamed connection is still Dev | ⬜ |
 
-**Score: 2/47 (4%)**
+**Score: 2/55 (4%)**
 
 Items 3-17 require manual testing with a live Azure Service Bus connection.
 

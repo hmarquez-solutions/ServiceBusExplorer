@@ -23,6 +23,8 @@
   <Project Path="NotificationHubs/NotificationHubs.csproj" />
   <Project Path="Relay/Relay.csproj" />
   <Project Path="ServiceBus/ServiceBus.csproj" />
+  <Project Path="ServiceBusExplorer.Desktop/ServiceBusExplorer.Desktop.csproj" />
+  <Project Path="ServiceBusExplorer.Desktop.Tests/ServiceBusExplorer.Desktop.Tests.csproj" />
   <Project Path="ServiceBusExplorer.Tests/ServiceBusExplorer.Tests.csproj" />
   <Project Path="ServiceBusExplorer/ServiceBusExplorer.csproj">
     <Platform Solution="*|x86" Project="x86" />

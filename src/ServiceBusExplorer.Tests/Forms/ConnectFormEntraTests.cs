@@ -239,7 +239,7 @@ namespace ServiceBusExplorer.Tests.Forms
             selectedEntitiesEnabled.Should().BeFalse();
         }
 
-        static void RunOnStaThread(Action action)
+        internal static void RunOnStaThread(Action action)
         {
             Exception exception = null;
             var thread = new Thread(() =>
@@ -264,7 +264,7 @@ namespace ServiceBusExplorer.Tests.Forms
             }
         }
 
-        static void ResetManualConnectionState()
+        internal static void ResetManualConnectionState()
         {
             SetPrivateStaticField(typeof(ConnectForm), "connectionString", null);
             SetPrivateStaticField(typeof(ConnectForm), "connectionStringIndex", -1);
@@ -283,7 +283,7 @@ namespace ServiceBusExplorer.Tests.Forms
             return root.Controls.Find(name, true).Single().Should().BeOfType<T>().Which;
         }
 
-        static System.Windows.Forms.ComboBox GetComboBox(ConnectForm form, string name)
+        internal static System.Windows.Forms.ComboBox GetComboBox(ConnectForm form, string name)
         {
             return FindControl<System.Windows.Forms.ComboBox>(form, name);
         }

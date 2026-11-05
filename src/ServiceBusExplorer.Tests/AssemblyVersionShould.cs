@@ -45,7 +45,9 @@ namespace ServiceBusExplorer.Tests
                 };
             }).ToArray();
 
-            actualAssemblyVersions.Should().HaveCount(9).And.BeEquivalentTo(expectedVersions);
+            // Every project under src is scanned, including ones this test project doesn't reference
+            // (the .NET 10 Desktop app), so check that each assembly here matches its project.
+            actualAssemblyVersions.Should().HaveCount(9).And.BeSubsetOf(expectedVersions);
         }
 
         private string ExtractProjectName(string x)

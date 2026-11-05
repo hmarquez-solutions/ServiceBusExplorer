@@ -233,6 +233,8 @@ namespace ServiceBusExplorer.Forms
         private readonly MethodInfo scrollInternalMethodInfo;
         private readonly MethodInfo scrollInternalByDeltaMethodInfo;
         private int savedConnectionsWheelDelta;
+        private ConnectionEnvironment connectionEnvironment = ConnectionEnvironment.Untagged;
+        private Panel environmentBand;
         private string messageFile;
         private bool importing;
         private readonly int mainSplitterDistance;
@@ -330,6 +332,7 @@ namespace ServiceBusExplorer.Forms
             UpdateSavedConnectionsMenu();
             DisplayNewVersionInformation();
             InitializeDashboard();
+            InitializeEnvironmentBand();
 
             WriteToLog(logMessage);
         }
@@ -546,8 +549,10 @@ namespace ServiceBusExplorer.Forms
 
         private async void SavedConnectionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var serviceBusNamespace = serviceBusHelper.ServiceBusNamespaces[(sender as ToolStripMenuItem).Tag.ToString()];
+            var namespaceKey = (sender as ToolStripMenuItem).Tag.ToString();
+            var serviceBusNamespace = serviceBusHelper.ServiceBusNamespaces[namespaceKey];
             serviceBusHelper.Connect(serviceBusNamespace);
+            ApplyConnectionEnvironment(GetSavedConnectionEnvironment(namespaceKey));
             SetTitle(serviceBusNamespace.Namespace, "Service Bus");
 
             foreach (var userControl in panelMain.Controls.OfType<UserControl>())
@@ -608,6 +613,7 @@ namespace ServiceBusExplorer.Forms
                             connectForm.ConnectionString, StaticWriteToLog);
                     
                     serviceBusHelper.Connect(serviceBusNamespace);
+                    ApplyConnectionEnvironment(connectForm.SelectedConnectionEnvironment);
 
                     SetTitle(serviceBusNamespace.Namespace, "Service Bus");
                     panelTreeView.HeaderText = string.Format(NamespaceTypeFormat, "Service Bus");
@@ -652,6 +658,7 @@ namespace ServiceBusExplorer.Forms
                         connectForm.CustomId,
                         WriteToLog);
 
+                    ApplyConnectionEnvironment(ConnectionEnvironment.Untagged);
                     SetTitle(connectForm.NamespaceName, "Event Grid");
                     panelTreeView.HeaderText = string.Format(NamespaceTypeFormat, "Event Grid");
 
@@ -4482,7 +4489,53 @@ namespace ServiceBusExplorer.Forms
 
         private void SetTitle(string prefix, string explorer)
         {
-            this.Text = $"{prefix} - {explorer} Explorer";
+            this.Text = $"[{connectionEnvironment.ToString().ToUpperInvariant()}] {prefix} - {explorer} Explorer";
+        }
+
+        private void InitializeEnvironmentBand()
+        {
+            // Sits just above the main split container; shown once connected. Added last, so it stays
+            // behind the logo and version link if they reach down that far.
+            var height = (int)Math.Round(5 * DeviceDpi / 96.0);
+            environmentBand = new Panel
+            {
+                Location = new Point(mainSplitContainer.Left, mainSplitContainer.Top - height - 1),
+                Size = new Size(mainSplitContainer.Width, height),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                Visible = false
+            };
+            Controls.Add(environmentBand);
+        }
+
+        private void ApplyConnectionEnvironment(ConnectionEnvironment environment)
+        {
+            connectionEnvironment = environment;
+            environmentBand.BackColor = GetEnvironmentColor(environment);
+            environmentBand.Visible = true;
+        }
+
+        private ConnectionEnvironment GetSavedConnectionEnvironment(string namespaceKey)
+        {
+            // Open the configuration fresh: the connect dialog may have just changed the tag.
+            return ConnectionEnvironmentHelper.GetEnvironment(
+                TwoFilesConfiguration.Create(configFileUse, WriteToLog), namespaceKey);
+        }
+
+        private static Color GetEnvironmentColor(ConnectionEnvironment environment)
+        {
+            switch (environment)
+            {
+                case ConnectionEnvironment.Dev:
+                    return Color.FromArgb(15, 123, 79);
+                case ConnectionEnvironment.Test:
+                    return Color.FromArgb(0, 95, 184);
+                case ConnectionEnvironment.Staging:
+                    return Color.FromArgb(202, 138, 4);
+                case ConnectionEnvironment.Prod:
+                    return Color.FromArgb(196, 43, 28);
+                default:
+                    return Color.FromArgb(110, 110, 110);
+            }
         }
 
         #endregion
@@ -4594,6 +4647,15 @@ namespace ServiceBusExplorer.Forms
 
         #region Public Static Properties
         public static MainForm SingletonMainForm => mainSingletonMainForm;
+
+        #endregion
+
+        #region Public Instance Properties
+        /// <summary>
+        /// True when the current connection is Prod or untagged: purges and deletes need the name typed.
+        /// </summary>
+        public bool RequiresStrictConfirmation =>
+            ConnectionEnvironmentHelper.RequiresStrictConfirmation(connectionEnvironment);
 
         #endregion
 
@@ -7486,6 +7548,7 @@ namespace ServiceBusExplorer.Forms
                     if (ns != null)
                     {
                         serviceBusHelper.Connect(ns);
+                        ApplyConnectionEnvironment(GetSavedConnectionEnvironment(item.Key));
                         SetTitle(ns.Namespace, "Service Bus");
                     }
                 }
@@ -7494,6 +7557,7 @@ namespace ServiceBusExplorer.Forms
                 {
                     var serviceBusNamespace = ServiceBusNamespace.GetServiceBusNamespace("Manual", argumentValue, StaticWriteToLog);
                     serviceBusHelper.Connect(serviceBusNamespace);
+                    ApplyConnectionEnvironment(ConnectionEnvironment.Untagged);
                     SetTitle(serviceBusNamespace.Namespace, "Service Bus");
                 }
                 panelMain.Controls.Clear();
@@ -7782,7 +7846,12 @@ namespace ServiceBusExplorer.Forms
                     return;
                 }
 
-                if (!DeleteForm.ShowAndWaitUserConfirmation(this, deleteConfirmation))
+                // Under Prod rules, a single topic is confirmed by its path and anything wider by the namespace name.
+                var strictConfirmationText = treeNode.Tag is TopicDescription topicToPurge
+                    ? topicToPurge.Path
+                    : GetServiceBusNamespaceLocalName(rootNode.Text);
+
+                if (!DeleteForm.ShowAndWaitUserConfirmation(this, deleteConfirmation, strictConfirmationText))
                 {
                     return;
                 }

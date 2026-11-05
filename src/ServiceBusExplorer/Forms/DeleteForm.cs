@@ -68,24 +68,41 @@ namespace ServiceBusExplorer.Forms
         {
             this.configuration = configuration;
 
-            bool disableAccidentalDeletionPrevention = configuration.GetBoolValue(
+            // Under Prod rules the global opt-out is ignored and cannot be turned on from here.
+            var strict = RequiresStrictConfirmation();
+
+            bool disableAccidentalDeletionPrevention = !strict && configuration.GetBoolValue(
                 ConfigurationParameters.DisableAccidentalDeletionPrevention,
                 defaultValue: false);
 
             if (!disableAccidentalDeletionPrevention)
             {
-                useAccidentalDeletionPreventionCheck = true;
-
-                accidentalDeletionPreventionCheckControl.DeletionScopePromptText = deletionScopePromptText;
-                accidentalDeletionPreventionCheckControl.Visible = true;
-
-                accidentalDeletionPreventionCheckControl.Top = mainPanel.Bottom;
-                buttonsPanel.Top = accidentalDeletionPreventionCheckControl.Bottom;
-
-                accidentalDeletionPreventionCheckControl.Width = ClientSize.Width;
-
-                ClientSize = new Size(ClientSize.Width, buttonsPanel.Bottom);
+                ShowTypedConfirmation(deletionScopePromptText, allowDisablingFurtherChecks: !strict);
             }
+        }
+        #endregion
+
+        #region Private Methods
+        static bool RequiresStrictConfirmation()
+        {
+            // No main form means no known connection, which gets Prod rules.
+            return MainForm.SingletonMainForm?.RequiresStrictConfirmation ?? true;
+        }
+
+        void ShowTypedConfirmation(string deletionScopePromptText, bool allowDisablingFurtherChecks)
+        {
+            useAccidentalDeletionPreventionCheck = true;
+
+            accidentalDeletionPreventionCheckControl.DeletionScopePromptText = deletionScopePromptText;
+            accidentalDeletionPreventionCheckControl.AllowDisablingFurtherChecks = allowDisablingFurtherChecks;
+            accidentalDeletionPreventionCheckControl.Visible = true;
+
+            accidentalDeletionPreventionCheckControl.Top = mainPanel.Bottom;
+            buttonsPanel.Top = accidentalDeletionPreventionCheckControl.Bottom;
+
+            accidentalDeletionPreventionCheckControl.Width = ClientSize.Width;
+
+            ClientSize = new Size(ClientSize.Width, buttonsPanel.Bottom);
         }
         #endregion
 
@@ -100,7 +117,7 @@ namespace ServiceBusExplorer.Forms
             {
                 acceptForm = accidentalDeletionPreventionCheckControl.CheckAcceptanceAndNotifyUser();
 
-                if (accidentalDeletionPreventionCheckControl.DisableFurtherChecks)
+                if (configuration != null && accidentalDeletionPreventionCheckControl.DisableFurtherChecks)
                 {
                     configuration.SetValue(
                         ConfigurationParameters.DisableAccidentalDeletionPrevention,
@@ -147,12 +164,21 @@ namespace ServiceBusExplorer.Forms
         }
         #endregion
 
-        public static bool ShowAndWaitUserConfirmation(IWin32Window owner, string message)
+        /// <param name="strictConfirmationText">
+        /// When set and the connection is under Prod rules, the user must type this text to confirm.
+        /// </param>
+        public static bool ShowAndWaitUserConfirmation(IWin32Window owner, string message,
+            string strictConfirmationText = null)
         {
-            DeleteForm deleteForm = new DeleteForm(message);
-            DialogResult dialogResult = deleteForm.ShowDialog(owner);
+            using (var deleteForm = new DeleteForm(message))
+            {
+                if (!string.IsNullOrWhiteSpace(strictConfirmationText) && RequiresStrictConfirmation())
+                {
+                    deleteForm.ShowTypedConfirmation(strictConfirmationText, allowDisablingFurtherChecks: false);
+                }
 
-            return dialogResult == DialogResult.OK;
+                return deleteForm.ShowDialog(owner) == DialogResult.OK;
+            }
         }
     }
 }

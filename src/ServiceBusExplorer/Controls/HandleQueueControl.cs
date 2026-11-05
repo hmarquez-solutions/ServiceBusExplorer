@@ -388,7 +388,7 @@ namespace ServiceBusExplorer.Controls
 
         private async Task DoPurge(PurgeStrategies purgeStrategy, string deleteConfirmation)
         {
-            if (!DeleteForm.ShowAndWaitUserConfirmation(this, deleteConfirmation))
+            if (!DeleteForm.ShowAndWaitUserConfirmation(this, deleteConfirmation, queueDescription.Path))
             {
                 return;
             }

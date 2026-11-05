@@ -100,6 +100,7 @@ namespace ServiceBusExplorer.Forms
             this.lblEntityPath = new System.Windows.Forms.Label();
             this.grouperServiceBusNamespaces = new ServiceBusExplorer.Controls.Grouper();
             this.cboServiceBusNamespace = new System.Windows.Forms.ComboBox();
+            this.cboEnvironment = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.logoPictureBox)).BeginInit();
             this.grouperConfigFileUse.SuspendLayout();
             this.grouperFilters.SuspendLayout();
@@ -732,6 +733,7 @@ namespace ServiceBusExplorer.Forms
             this.grouperServiceBusNamespaces.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(153)))), ((int)(((byte)(180)))), ((int)(((byte)(209)))));
             this.grouperServiceBusNamespaces.BorderThickness = 1F;
             this.grouperServiceBusNamespaces.Controls.Add(this.cboServiceBusNamespace);
+            this.grouperServiceBusNamespaces.Controls.Add(this.cboEnvironment);
             this.grouperServiceBusNamespaces.CustomGroupBoxColor = System.Drawing.Color.FromArgb(((int)(((byte)(153)))), ((int)(((byte)(180)))), ((int)(((byte)(209)))));
             this.grouperServiceBusNamespaces.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             this.grouperServiceBusNamespaces.ForeColor = System.Drawing.Color.White;
@@ -759,9 +761,22 @@ namespace ServiceBusExplorer.Forms
             this.cboServiceBusNamespace.FormattingEnabled = true;
             this.cboServiceBusNamespace.Location = new System.Drawing.Point(16, 32);
             this.cboServiceBusNamespace.Name = "cboServiceBusNamespace";
-            this.cboServiceBusNamespace.Size = new System.Drawing.Size(336, 21);
+            this.cboServiceBusNamespace.Size = new System.Drawing.Size(240, 21);
             this.cboServiceBusNamespace.TabIndex = 0;
             this.cboServiceBusNamespace.SelectedIndexChanged += new System.EventHandler(this.cboServiceBusNamespace_SelectedIndexChanged);
+            // 
+            // cboEnvironment
+            // 
+            this.cboEnvironment.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cboEnvironment.BackColor = System.Drawing.SystemColors.Window;
+            this.cboEnvironment.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboEnvironment.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.cboEnvironment.FormattingEnabled = true;
+            this.cboEnvironment.Location = new System.Drawing.Point(264, 32);
+            this.cboEnvironment.Name = "cboEnvironment";
+            this.cboEnvironment.Size = new System.Drawing.Size(88, 21);
+            this.cboEnvironment.TabIndex = 1;
+            this.cboEnvironment.SelectedIndexChanged += new System.EventHandler(this.cboEnvironment_SelectedIndexChanged);
             // 
             // ConnectForm
             // 
@@ -807,6 +822,7 @@ namespace ServiceBusExplorer.Forms
         private System.Windows.Forms.Button btnCancel;
         private Grouper grouperServiceBusNamespaces;
         private System.Windows.Forms.ComboBox cboServiceBusNamespace;
+        private System.Windows.Forms.ComboBox cboEnvironment;
         private Grouper grouperServiceBusNamespaceSettings;
         private System.Windows.Forms.TextBox txtUri;
         private System.Windows.Forms.Label lblUri;

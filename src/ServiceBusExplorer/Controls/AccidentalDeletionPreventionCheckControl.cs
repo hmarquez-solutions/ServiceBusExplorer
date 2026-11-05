@@ -30,6 +30,20 @@ namespace ServiceBusExplorer.Controls
             get => chkDisableAccidentalDeletionPrevention.Checked;
             set => chkDisableAccidentalDeletionPrevention.Checked = value;
         }
+
+        // Hidden under Prod rules, where the check cannot be switched off.
+        public bool AllowDisablingFurtherChecks
+        {
+            get => chkDisableAccidentalDeletionPrevention.Visible;
+            set
+            {
+                chkDisableAccidentalDeletionPrevention.Visible = value;
+                if (!value)
+                {
+                    chkDisableAccidentalDeletionPrevention.Checked = false;
+                }
+            }
+        }
         #endregion
 
         #region Public Methods

@@ -1,0 +1,144 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ServiceBusExplorer.Desktop.ViewModels"
+        xmlns:views="using:ServiceBusExplorer.Desktop.Views"
+        x:Class="ServiceBusExplorer.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding WindowTitle}"
+        Width="1360" Height="860" MinWidth="900" MinHeight="560"
+        FontFamily="{DynamicResource UiFont}"
+        Background="{DynamicResource AppBackgroundBrush}">
+
+  <Window.DataTemplates>
+    <DataTemplate DataType="vm:EntityViewModel">
+      <views:EntityView />
+    </DataTemplate>
+  </Window.DataTemplates>
+
+  <DockPanel>
+    <!-- Environment band: the same signal as the WinForms app. -->
+    <Border DockPanel.Dock="Top" Height="4" IsVisible="{Binding IsConnected}"
+            Background="{Binding EnvironmentColor, Converter={x:Static views:HexBrushConverter.Instance}}" />
+
+    <!-- Title bar -->
+    <Border DockPanel.Dock="Top" Background="{DynamicResource ChromeBrush}"
+            BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="14,8">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+          <Button Content="Refresh" Command="{Binding RefreshCommand}" IsEnabled="{Binding IsConnected}"
+                  HotKey="F5" ToolTip.Tip="Reload entities and counts (F5)" />
+          <Button Content="Disconnect" Command="{Binding DisconnectCommand}" IsEnabled="{Binding IsConnected}" />
+          <Button Content="Light / dark" Command="{Binding ToggleThemeCommand}" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <TextBlock Text="Service Bus Explorer" FontWeight="SemiBold" VerticalAlignment="Center" />
+          <Border IsVisible="{Binding IsConnected}" CornerRadius="4" Padding="6,3" VerticalAlignment="Center"
+                  Background="{Binding EnvironmentColor, Converter={x:Static views:HexBrushConverter.Instance}}">
+            <TextBlock Text="{Binding EnvironmentLabel}" FontSize="10" FontWeight="Bold" Foreground="White" />
+          </Border>
+          <TextBlock Classes="mono" Text="{Binding FullyQualifiedNamespace}" IsVisible="{Binding IsConnected}"
+                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Status bar -->
+    <Border DockPanel.Dock="Bottom" Background="{DynamicResource ChromeBrush}"
+            BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,4">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Right" Classes="muted" FontSize="12"
+                   Text="Read-only preview · peek only, nothing is changed or removed" />
+        <TextBlock Classes="muted" FontSize="12" Text="{Binding StatusText}" />
+      </DockPanel>
+    </Border>
+
+    <Panel>
+      <!-- Connect -->
+      <ScrollViewer IsVisible="{Binding IsDisconnected}">
+        <Border Width="520" Margin="0,64,0,24" HorizontalAlignment="Center" VerticalAlignment="Top"
+                Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource LineBrush}"
+                BorderThickness="1" CornerRadius="10" Padding="24">
+          <StackPanel Spacing="14">
+            <TextBlock Text="Connect to a namespace" FontSize="20" FontWeight="SemiBold" />
+
+            <StackPanel Orientation="Horizontal" Spacing="16">
+              <RadioButton GroupName="auth" Content="Connection string" IsChecked="{Binding Connect.UseConnectionString}" />
+              <RadioButton GroupName="auth" Content="Microsoft Entra ID" IsChecked="{Binding Connect.UseEntra}" />
+            </StackPanel>
+
+            <StackPanel Spacing="6" IsVisible="{Binding Connect.UseConnectionString}">
+              <TextBlock Text="Connection string" />
+              <TextBox Classes="mono" Text="{Binding Connect.ConnectionString}" PasswordChar="•" RevealPassword="False"
+                       PlaceholderText="Endpoint=sb://contoso.servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=..." />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="Needs Manage rights to list entities. It isn't saved anywhere." />
+            </StackPanel>
+
+            <StackPanel Spacing="6" IsVisible="{Binding Connect.UseEntra}">
+              <TextBlock Text="Namespace" />
+              <TextBox Classes="mono" Text="{Binding Connect.NamespaceName}" PlaceholderText="contoso or contoso.servicebus.windows.net" />
+              <TextBlock Text="Tenant ID (optional)" />
+              <TextBox Classes="mono" Text="{Binding Connect.TenantId}" PlaceholderText="Leave empty for your home tenant" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="Opens your browser to sign in. Listing entities needs the Azure Service Bus Data Owner role." />
+            </StackPanel>
+
+            <StackPanel Spacing="6">
+              <TextBlock Text="Environment" />
+              <ComboBox ItemsSource="{Binding Connect.Environments}" SelectedItem="{Binding Connect.Environment}" MinWidth="160" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding Connect.Error}" Foreground="{DynamicResource BadBrush}" TextWrapping="Wrap"
+                       IsVisible="{Binding Connect.Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" IsDefault="True"
+                      IsEnabled="{Binding !IsBusy}" />
+              <ProgressBar IsIndeterminate="True" Width="120" IsVisible="{Binding IsBusy}" VerticalAlignment="Center" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </ScrollViewer>
+
+      <!-- Explorer -->
+      <Grid IsVisible="{Binding IsConnected}" ColumnDefinitions="270,4,*">
+        <DockPanel Background="{DynamicResource ChromeBrush}">
+          <StackPanel DockPanel.Dock="Top" Margin="10,10,10,6" Spacing="8">
+            <TextBox Text="{Binding FilterText}" PlaceholderText="Filter entities" />
+            <CheckBox Content="Only with dead letters" IsChecked="{Binding OnlyWithDeadLetters}" />
+          </StackPanel>
+          <TreeView ItemsSource="{Binding Nodes}" SelectedItem="{Binding SelectedNode}" Margin="4,0,4,8">
+            <TreeView.Styles>
+              <Style Selector="TreeViewItem" x:DataType="vm:EntityNodeViewModel">
+                <Setter Property="IsExpanded" Value="True" />
+              </Style>
+            </TreeView.Styles>
+            <TreeView.ItemTemplate>
+              <TreeDataTemplate DataType="vm:EntityNodeViewModel" ItemsSource="{Binding Children}">
+                <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,1">
+                  <TextBlock Grid.Column="0" Text="{Binding Title}" TextTrimming="CharacterEllipsis"
+                             FontWeight="{Binding IsGroup, Converter={x:Static views:BoolToFontWeightConverter.SemiBoldWhenTrue}}" />
+                  <TextBlock Grid.Column="1" Classes="mono muted" Margin="8,0,0,0" FontSize="11"
+                             Text="{Binding ActiveText}" VerticalAlignment="Center" />
+                  <Border Grid.Column="2" Margin="6,0,0,0" Padding="5,1" CornerRadius="4"
+                          Background="{DynamicResource BadSoftBrush}" IsVisible="{Binding HasDeadLetters}">
+                    <TextBlock Classes="mono" FontSize="11" Foreground="{DynamicResource BadBrush}" Text="{Binding DeadLetterText}" />
+                  </Border>
+                </Grid>
+              </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+          </TreeView>
+        </DockPanel>
+
+        <GridSplitter Grid.Column="1" Background="{DynamicResource LineBrush}" ResizeDirection="Columns" />
+
+        <Panel Grid.Column="2">
+          <TextBlock Classes="muted" Text="Pick a queue or subscription in the navigator."
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     IsVisible="{Binding CurrentEntity, Converter={x:Static ObjectConverters.IsNull}}" />
+          <ContentControl Content="{Binding CurrentEntity}" />
+        </Panel>
+      </Grid>
+    </Panel>
+  </DockPanel>
+</Window>
